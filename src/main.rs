@@ -135,8 +135,7 @@ fn distance((x1, y1, z1): (f64, f64, f64), (x2, y2, z2): (f64, f64, f64)) -> f64
 
 fn main() -> io::Result<()> {
     // Path to the .gro file
-    let path = Path::new("/home/tomas/O_Data/TTA_tta_2adn_400ns_R1.gro");
-    let file = File::open(&path)?;
+    let path: &Path = Path::new("/home/tomas/O_Data/TTA_tta_2adn_400ns_R1.gro");
 
     let mut molecule_values: HashMap<String, Vec<(f64, f64, f64)>> = HashMap::new();
     let mut molecule_order: Vec<String> = Vec::new();

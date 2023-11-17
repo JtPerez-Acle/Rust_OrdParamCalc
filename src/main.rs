@@ -3,47 +3,8 @@ use std::fs::File;
 use std::io::{self, BufRead, Write};
 use std::path::Path;
 
-// Function to compute dot product of two vectors
-fn dot_product((x1, y1, z1): (f64, f64, f64), (x2, y2, z2): (f64, f64, f64)) -> f64 {
-    x1 * x2 + y1 * y2 + z1 * z2
-}
-
-// Function to compute magnitude of a vector - inc Debug message
-/*fn magnitude((x, y, z): (f64, f64, f64)) -> f64 {
-    if x.is_infinite() || y.is_infinite() || z.is_infinite() || x.is_nan() || y.is_nan() || z.is_nan() {
-        println!("Invalid values: x={}, y={}, z={}", x, y, z);
-        return 0.0;
-    }
-    let result = (x.powf(2.0) + y.powf(2.0) + z.powf(2.0)).sqrt();
-    if result.is_nan() {
-        println!("NaN result for values: x={}, y={}, z={}", x, y, z);
-    }
-    result
-}
-*/
-
-fn normalize(v: (f64, f64, f64)) -> (f64, f64, f64) {
-    let magnitude = (v.0.powf(2.0) + v.1.powf(2.0) + v.2.powf(2.0)).sqrt();
-    if magnitude == 0.0 {
-        println!("Warning: Zero magnitude vector encountered. Check your data.");
-        return (0.0, 0.0, 0.0);
-    }
-    (v.0 / magnitude, v.1 / magnitude, v.2 / magnitude)
-}
-
-// Calculate the angle between two normalized vectors
-fn angle_between(v1: (f64, f64, f64), v2: (f64, f64, f64)) -> f64 {
-    let v1_normalized = normalize(v1);
-    let v2_normalized = normalize(v2);
-
-    let dot = dot_product(v1_normalized, v2_normalized);
-    dot.acos()
-}
-
-
-fn order_parameter(angle_deg: f64) -> f64 {
-    1.5 * (angle_deg.cos().powf(2.0)) - 0.5
-}
+mod math_procss;
+use crate::math_procss::*;
 
 // Function to extract molecule data from a line
 fn extract_molecule_data(line: &str, index: usize) -> Result<(String, f64, f64, f64), io::Error> {
@@ -77,7 +38,7 @@ fn handle_new_frame(line: &str, molecule_order: &mut Vec<String>, molecule_value
                     let coords_next = molecule_values.get(key_next).unwrap_or(&vec![(0.0, 0.0, 0.0)])[0];
         
                     // Check the distance between i-1 and i+1 atoms
-                    //if distance(coords_prev, coords_next) <= 0.3 {
+                    if distance(coords_prev, coords_next) <= 0.3 {
                         // Calculate the vector for the bond of interest using neighboring atoms
                         let vector_bond = (coords_next.0 - coords_prev.0, coords_next.1 - coords_prev.1, coords_next.2 - coords_prev.2);
 
@@ -87,7 +48,7 @@ fn handle_new_frame(line: &str, molecule_order: &mut Vec<String>, molecule_value
                         // Calculate the angle between the bond of interest and the reference vector
                         let angle = angle_between(vector_bond, vector_ref);
                         
-                        // println!("Index: {}, Key: {}, Prev: {}, Next: {}", index, key, key_prev, key_next);
+                        // println!("Index: {}, Key: {}, Prev: {}, Next: {} ", index, key, key_prev, key_next);
                         // println!("Coords Prev: {:?}, Coords: {:?}, Coords Next: {:?}", coords_prev, coords, coords_next);
 
                         // Remove comments to check for bug and issues while processing
@@ -97,10 +58,12 @@ fn handle_new_frame(line: &str, molecule_order: &mut Vec<String>, molecule_value
                         // print!("{} ", order_param);
                         total_order_param_frame += order_param;
                         order_params_frame.push(order_param);
-                        // println!("Frame {}: Calculated order parameters count: {}", frame_count, order_params_frame.len());
+                        println!("Frame {}: Calculated order parameters count: {} ", frame_count, order_params_frame.len());
                         // println!("Frame {}: Total order parameter: {}", frame_count, total_order_param_frame);
 
-                    //}
+                    } else {
+                        break;
+                    }
                 }
             }
         }
@@ -127,10 +90,6 @@ fn process_molecule_data(line: &str, index: usize, molecule_order: &mut Vec<Stri
         molecule_values.entry(molecule_name.clone()).or_insert_with(Vec::new).push((x, y, z));
         molecule_order.push(molecule_name.clone());
     }
-}
-
-fn distance((x1, y1, z1): (f64, f64, f64), (x2, y2, z2): (f64, f64, f64)) -> f64 {
-    ((x2 - x1).powi(2) + (y2 - y1).powi(2) + (z2 - z1).powi(2)).sqrt()
 }
 
 fn main() -> io::Result<()> {
